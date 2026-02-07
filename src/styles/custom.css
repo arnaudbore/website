@@ -60,3 +60,14 @@ starlight-tabs {
 	background-color: light-dark(var(--color-gray-100), var(--color-gray-700));
 	padding: 10px;
 }
+
+.module-input-table tr td:not(:nth-child(3)),
+.module-output-table tr td:not(:nth-child(3)),
+.module-args-table tr td:not(:nth-child(3)),
+.module-tools-table tr td:not(:nth-child(2)),
+.subworkflow-input-table tr td:not(:nth-child(3)),
+.subworkflow-output-table tr td:not(:nth-child(3)),
+.subworkflow-args-table tr td:not(:nth-child(3)){
+    width: 1%;
+    white-space: nowrap;
+}
