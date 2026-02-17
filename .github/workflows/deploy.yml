@@ -20,14 +20,21 @@ jobs:
           ref: main
           path: nf-neuro
           fetch-depth: 0
-      - name: Setup python
-        uses: actions/setup-python@v5.4.0
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
-          python-version: "3.10"
-          cache: pip
-      - name: Install dependencies
+          python-version: "3.12"
+      - uses: snok/install-poetry@v1
+        with:
+          version: "1.8.5"
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: .venv
+          installer-parallel: true
+      - name: Install project docs extra with poetry
+        working-directory: nf-neuro
         run: |
-          pip install pyyaml jinja2
+          poetry install --extras docs
       - name: Generate markdown
         id: generate-module
         run: |
@@ -37,21 +44,23 @@ jobs:
             local module_name=$(basename "$(dirname "$file")")
             local category=$(basename "$(dirname "$(dirname "$file")")")
             mkdir -p modules/$category
-            cd nf-neuro
-            python docs/astro/convert_module.py ../$(dirname "$file") ${{ github.sha }} ../modules/${category}/${module_name}.md
+            poetry -C nf-neuro run nf-neuro-convert-module \
+              $(dirname "$file") ${{ github.sha }} \
+              modules/${category}/${module_name}.mdx
           }
           function convert_subworkflow () {
             local file="$1"
             local sbwf_name=$(basename "$(dirname "$file")")
-            cd nf-neuro
-            python docs/astro/convert_subworkflow.py ../$(dirname "$file") ${{ github.sha }} ../subworkflows/${sbwf_name}.md
+            poetry -C nf-neuro run nf-neuro-convert-subworkflow \
+              $(dirname "$file") ${{ github.sha }} \
+              subworkflows/${sbwf_name}.mdx
           }
           export -f convert_module
           export -f convert_subworkflow
 
           mkdir -p modules/ subworkflows/
-          parallel --jobs $(nproc) convert_module ::: nf-neuro/modules/nf-neuro/**/meta.yml
-          parallel --jobs $(nproc) convert_subworkflow ::: nf-neuro/subworkflows/nf-neuro/**/meta.yml
+          printf '%s\n' nf-neuro/modules/nf-neuro/**/meta.yml | xargs -P $(nproc) -I {} bash -c 'convert_module "$@"' _ {}
+          printf '%s\n' nf-neuro/subworkflows/nf-neuro/**/meta.yml | xargs -P $(nproc) -I {} bash -c 'convert_subworkflow "$@"' _ {}
       - name: Pack into artifact
         uses: actions/upload-artifact@v4
         with:
