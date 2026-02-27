@@ -109,7 +109,7 @@ linking those defaults in your subworkflow, we created an utility, `utils_option
 
 ```diff lan="groovy" title="main.nf"
 ...
-+import { getOptionsWithDefaults } from '../utils_options/main'
++import { UTILS_OPTIONS } from '../utils_options/main'
 
 workflow PREPROC_ANAT {
 take:
@@ -117,7 +117,8 @@ take:
     ...
     options           // Structure :  map(options), optional
 main:
-+    options = getOptionsWithDefaults(options, "${moduleDir}/meta.yml")
++    UTILS_OPTIONS(options, "${moduleDir}/meta.yml")
++    options = UTILS_OPTIONS.out.options
 
     ...
 }
@@ -205,7 +206,7 @@ include { PREPROC_N4               } from '../../../modules/nf-neuro/preproc/n4/
 // SUBWORKFLOWS
 include { ANATOMICAL_SEGMENTATION  } from '../anatomical_segmentation/main'
 // UTILITY
-include { getOptionsWithDefaults } from '../utils_options/main'
+include { UTILS_OPTIONS } from '../utils_options/main'
 
 workflow PREPROC_ANAT {
 take:
@@ -220,7 +221,8 @@ take:
     options             // Structure : map(options)                                       , optional
 main:
     ch_versions = Channel.empty()
-    options = getOptionsWithDefaults(options, "${moduleDir}/meta.yml")
+    UTILS_OPTIONS(options, "${moduleDir}/meta.yml")
+    options = UTILS_OPTIONS.out.options
 
     if (options.preproc_anat_denoise) {
         ch_denoising_nlmeans = ch_anatomical
