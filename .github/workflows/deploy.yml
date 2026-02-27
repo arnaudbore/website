@@ -2,6 +2,12 @@ name: Deploy to GitHub Pages
 
 on:
   workflow_call:
+    inputs:
+      dry-run:
+        description: "Whether to do a dry run (test the deployment without actually publishing)"
+        required: false
+        default: false
+        type: boolean
 
 # Allow this job to clone the repo and create a page deployment
 permissions:
@@ -93,6 +99,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    if: ${{ !inputs.dry-run }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

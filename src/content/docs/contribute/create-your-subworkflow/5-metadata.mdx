@@ -11,7 +11,7 @@ and dependencies** of your subworkflow, as well as other useful fields.
 usage outputs for command line interfaces (CLI)**. All this really helps users and developers understand the purpose of
 your subworkflow, its configuration and its behaviors.
 
-### The `description` field
+## The `description` field
 
 Each subworkflow requires a thourough description of it main purpose, its configuration and its behaviors. In addition,
 the description should contain a **consise explanation of the dataflow between the modules and other subworkflows used**.
@@ -29,7 +29,7 @@ description: |
 +    [ ANATOMICAL_SEGMENTATION ] Segment the anatomical image into different tissue types (GM, WM, CSF).
 ```
 
-### The `keywords` field
+## The `keywords` field
 
 The keywords field is a list of keywords that describe the subworkflow and **will help users find it through search tools**
 such as the ones included on this website. **The keywords should be relevant to the subworkflow and its purpose**. For
@@ -51,7 +51,7 @@ description: |
 +  - segmentation
 ```
 
-### The `components` field
+## The `components` field
 
 The components field is a list of all the modules, then all subworkflows, included in the **_main.nf_** file :
 
@@ -72,7 +72,7 @@ keywords:
 +  - anatomical_segmentation
 ```
 
-### The `args` field
+## The `args` field
 
 The args field is a list of all the parameters (`params`) defined for the subworkflow. **Parameters defined in included
 components MUST also be described here, unless they SHOULD be hidden**. For the `preproc_anat` subworkflow, use the following :
@@ -87,18 +87,6 @@ keywords:
 components:
   ...
 +args:
-+  - preproc_anat_denoise:
-+      type: boolean
-+      description: Denoise the anatomical image with the Non-Local Means algorithm.
-+      default: true
-+  - preproc_anat_bet_before_n4:
-+      type: boolean
-+      description: Perform brain extraction before intensity normalization.
-+      default: true
-+  - preproc_anat_n4:
-+      type: boolean
-+      description: Perform intensity normalization on the anatomical image.
-+      default: true
 +  - preproc_anat_nlmeans_number_of_coils:
 +      type: int
 +      description: Number of receive coils used to acquire the anatomical image.
@@ -137,16 +125,13 @@ components:
 +  - preproc_anat_n4_shrink_factor:
 +      type: int
 +      description: Resolution downsampling factor to use for intensity normalization.
-+  - run_synthbet:
-+      type: boolean
-+      description: (ANATOMICAL_SEGMENTATION) Run the synthetic brain extraction step.
-+      default: false
 ```
 
-### The `input` field
+## The `input` field
 
 The input field lists all input channels **in order**. **Each entry defines the content structure of an input channel in
-a list of maps**. For the `preproc_anat` subworkflow, there are 8 inputs to document :
+a list of maps**. For the `preproc_anat` subworkflow, there are 8 inputs to document (excluding the `options` map, which is
+described just after) :
 
 ```diff lang="yaml"
 ---
@@ -234,7 +219,38 @@ args:
 +            description: FreeSurfer license file.
 ```
 
-### The `output` field
+### Input `options` map
+
+To document this input, you need to describe and assign **default values** to all potential options. This is done using the `entries`
+entry of its metadata field. The content of each entry follow the same for as for [arguments](#the-args-field). Below is an example
+for `preproc_anat` :
+
+```diff lang="yaml"
+input:
+...
++  - options:
++      description: Map of options for the preproc_anat subworkflow.
++      mandatory: false
++      entries:
++        preproc_anat_denoise:
++          type: boolean
++          description: Denoise the anatomical image with the Non-Local Means algorithm.
++          default: true
++        preproc_anat_bet_before_n4:
++          type: boolean
++          description: Perform brain extraction before intensity normalization.
++          default: true
++        preproc_anat_n4:
++          type: boolean
++          description: Perform intensity normalization on the anatomical image.
++          default: true
++        run_synthbet:
++          type: boolean
++          description: (ANATOMICAL_SEGMENTATION) Run the synthetic brain extraction step.
++          default: false
+```
+
+## The `output` field
 
 Finally, it's time to document the `output`, the last metadata section ! They are **mostly structured the same way as the
 `input`**, with `files` having an **aditional `pattern` field** describing their naming convention and possible formats.

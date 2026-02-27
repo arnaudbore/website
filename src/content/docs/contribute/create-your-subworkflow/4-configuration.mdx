@@ -37,32 +37,43 @@ For subworkflows, configuration acts on two fronts :
 2. Configuring the **behavior of its included components** to fit its use-case, and allows end-users to modify it.
 </Steps>
 
-## Define subworkflow behaviors
-
 :::caution
-**NEVER** define a configuration logic using the **content of a channel**. Channels evaluate to <code class="dark:text-blue-300 text-blue-500">true</code>
-nonetheless, even when empty. You need to use configuration through `params` or `task.ext`, or apply
-[nextflow operators](https://www.nextflow.io/docs/latest/reference/operator.html) to unravel the logic at runtime by
-removing data that should not be processed.
+**NEVER** define a configuration logic using the **content of a channel**, such as :
+
+```groovy
+if (ch_brain_mask) {
+    // do something
+}
+```
+
+Channels evaluate to <code class="dark:text-blue-300 text-blue-500">true</code> nonetheless, even when empty. You need to use either :
+- configuration through an [input `options` map](#define-subworkflow-behaviors)
+- configuration [parameters (`params`) or module arguments (`task.ext`)](#change-components-behaviors)
+- [logic on the channel's content](/contribute/create-your-subworkflow/3-optional-inputs) using
+  [nextflow operators](https://www.nextflow.io/docs/latest/reference/operator.html)
+
 :::
 
-Subworkflows parameters are defined using the `params` configuration scope. This scope is available in all **_.nf_** files, but
-`params` defined there can be overriden by **_.config_** files at execution, or by other subworkflows that would include yours.
-For the `preproc_anat` subworkflow, there are no subworkflow parameters defined for now, but we could, for example, add one to
+## Define subworkflow behaviors
+
+Changing the behavior of a subworkflow (the code contained in the `main` block) is done via an **input options `map`**. This `options` input is
+available to other subworkflows and pipelines that will include yours to customize its execution. It is a
+[map data structure](https://groovy-lang.org/syntax.html#_maps) with `string` keys and values of any type. In the context of the `preproc_anat`
+subworkflow, no subworkflow options are defined yet, but we could, for example, add one to
 **skip the denoising step** :
 
 ```diff lang="groovy" title="main.nf"
 ...
 
-+params.preproc_anat_denoise = true
-
 subworkflow preproc_anat {
 take:
     ch_anatomical     // Structure : [ [id: string]  , path(anat_image)  ]
     ...
++    options           // Structure : map(options), optional
 main:
++    def preproc_anat_denoise = options.withDefault{ true }.preproc_anat_denoise as Boolean 
     ...
-+    if (params.preproc_anat_denoise) {
++    if (preproc_anat_denoise) {
         ch_denoising_nlmeans = ch_anatomical
             .join(ch_brain_mask, remainder: true)
             .map{ meta, image, mask -> [meta, image, [], mask ?: []] }
@@ -82,11 +93,36 @@ main:
 ```
 
 :::tip[What is happening here ?]
-- The <span class="dark:text-blue-300 text-blue-500">DENOISING_NLMEANS</span> module is only run if the parameter `preproc_anat_denoise` is set
-  to <span class="dark:text-blue-300 text-blue-500">true</span>. When it is, it changes the channel assigned to `ch_anatomical` for the output
-  of the module.
+- The <span class="dark:text-blue-300 text-blue-500">DENOISING_NLMEANS</span> module is only run if the option `preproc_anat_denoise` is set
+  to <span class="dark:text-blue-300 text-blue-500">true</span> in the input `options` map. When it is, it changes the channel assigned to
+  `ch_anatomical` for the output of the module.
+- We want the <span class="dark:text-blue-300 text-blue-500">DENOISING_NLMEANS</span> to run by default. To do so, we use the
+  [Groovy `withDefault` method](https://docs.groovy-lang.org/latest/html/groovy-jdk/java/util/Map.html#withDefault(groovy.lang.Closure)) to
+  temporarily set `preproc_anat_denoise` to <span class="dark:text-blue-300 text-blue-500">true</span> if it is absent from the `options` map.
 - The other downstream components then access this variable, instead of calling <InlineCode parts={frontmatter.coloredNLMeans} /> directly.
 :::
+
+### Setting defaults from metadata
+
+You'll edit the **subworkflow metadata** later. For now, you only need to know that **you will define all option's default values there**. To ease
+linking those defaults in your subworkflow, we created an utility, `utils_options`. In the context of `preproc_anat`, it looks like this :
+
+```diff lan="groovy" title="main.nf"
+...
++import { UTILS_OPTIONS } from '../utils_options/main'
+
+workflow PREPROC_ANAT {
+take:
+    ch_anatomical     // Structure : [ [id: string]  , path(anat_image)  ]
+    ...
+    options           // Structure :  map(options), optional
+main:
++    UTILS_OPTIONS(options, "${moduleDir}/meta.yml")
++    options = UTILS_OPTIONS.out.options
+
+    ...
+}
+```
 
 ## Change components behaviors
 
@@ -109,8 +145,7 @@ you will document its existence and still use it profusely in tests :
 
 ```groovy title="nextflow.config"
 params {
-    preproc_anat_denoise = true
-    preproc_anat_n4 = true
+
 }
 ```
 
@@ -121,8 +156,6 @@ and only module, using a **process selector** :
 
 ```diff title="nextflow.config" lang="groovy" {"1": 4} {"2": 7-11}
 params {
-    preproc_anat_denoise = true
-    preproc_anat_n4 = true
 +    preproc_anat_nlmeans_number_of_coils = 1
 }
 
@@ -155,9 +188,7 @@ configuration job for `preproc_anat`, but the implementation would be more compl
 :::
 </TabItem>
 <TabItem label="Subworkflows">
-Configuration is done using the `params` scope directly in the **_main.nf_** file of your subworkflow, **after** the sub-components inclusion and
-**before** the `workflow` definition. **Use the same parameter names** as the ones defined in the subworkflow you include and they will
-**overwrite their values**.
+Configuration is done using the input `options` map. Simply pass the map to child subworkflows for it to unpack and apply.
 </TabItem>
 </Tabs>
 
@@ -174,10 +205,8 @@ include { BETCROP_ANTSBET          } from '../../../modules/nf-neuro/betcrop/ant
 include { PREPROC_N4               } from '../../../modules/nf-neuro/preproc/n4/main'
 // SUBWORKFLOWS
 include { ANATOMICAL_SEGMENTATION  } from '../anatomical_segmentation/main'
-
-params.preproc_anat_denoise = true
-params.preproc_anat_bet_before_n4 = true
-params.preproc_anat_n4 = true
+// UTILITY
+include { UTILS_OPTIONS } from '../utils_options/main'
 
 workflow PREPROC_ANAT {
 take:
@@ -189,10 +218,13 @@ take:
     ch_freesurferseg    // Structure : [ [id: string]  , path(aparc+aseg) , path(wmparc) ], optional
     ch_lesion           // Structure : [ [id: string]  , path(lesion)                    ], optional
     ch_fs_license       // Structure : [ path(license)                                   ], optional
+    options             // Structure : map(options)                                       , optional
 main:
     ch_versions = Channel.empty()
+    UTILS_OPTIONS(options, "${moduleDir}/meta.yml")
+    options = UTILS_OPTIONS.out.options
 
-    if (params.preproc_anat_denoise) {
+    if (options.preproc_anat_denoise) {
         ch_denoising_nlmeans = ch_anatomical
             .join(ch_brain_mask, remainder: true)
             .map{ meta, image, mask -> [meta, image, [], mask ?: []] }
@@ -203,7 +235,7 @@ main:
     }
 
     ch_brain_pre_mask = Channel.empty()
-    if (params.preproc_anat_bet_before_n4) {
+    if (options.preproc_anat_bet_before_n4) {
         ch_betcrop_synthbet = ch_anatomical
             .join(ch_brain_mask, remainder: true)
             .filter{ meta, image, mask -> !mask }
@@ -215,7 +247,7 @@ main:
         ch_brain_pre_mask = ch_brain_mask.mix(BETCROP_SYNTHBET.out.brain_mask)
     }
 
-    if (params.preproc_anat_n4) {
+    if (options.preproc_anat_n4) {
         ch_preproc_n4 = ch_anatomical
             .join(ch_n4_reference, remainder: true)
             .join(ch_brain_pre_mask, remainder: true)
@@ -239,7 +271,8 @@ main:
         ch_anatomical,
         ch_freesurferseg,
         ch_lesion,
-        ch_license
+        ch_license,
+        options                 // Pass the options map to child subworkflows for customization
     )
 emit:
     ch_anatomical = ch_anatomical                      // channel: [ [id: string]      , path(image)      ]
@@ -258,10 +291,6 @@ emit:
 
 ```groovy title="nextflow.config"
 params {
-    preproc_anat_denoise = true
-    preproc_anat_bet_before_n4 = true
-    preproc_anat_n4 = true
-
     // Configure DENOISING_NLMEANS
     preproc_anat_nlmeans_number_of_coils = 1
     preproc_anat_nlmeans_sigma = 0.5
@@ -276,10 +305,6 @@ params {
     // Configure PREPROC_N4
     preproc_anat_n4_knots_per_voxel = 1
     preproc_anat_n4_shrink_factor = 1
-
-    // Configure ANATOMICAL_SEGMENTATION
-    run_synthbet = false                      // Reusing the same name, we could have changed if wanted
-
 }
 
 process {
