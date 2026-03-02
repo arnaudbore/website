@@ -44,27 +44,14 @@ export async function detectPipelineLogo(
 
   try {
     // Check for light/dark variants
-    const [hasLight, hasAlternLight, hasDark] = await Promise.all([
-      fileExists(org, name, lightPath),
-      fileExists(org, name, alternLightPath), // Check alternative light logo
-      fileExists(org, name, darkPath),
-    ]);
+    const hasDark = await fileExists(org, name, darkPath);
+    const hasLight = await fileExists(org, name, lightPath);
+    const hasAlternLight = await fileExists(org, name, alternLightPath);
 
     if ((hasLight || hasAlternLight) && hasDark) {
-      if (!hasLight && hasAlternLight) {
-        console.warn(`Using alternative light logo for ${org}/${name} as ${lightPath} was not found.`);
-        console.warn(`Consider renaming ${alternLightPath} to ${lightPath} for consistency.`);
-
-        return {
-          type: 'light-dark',
-          lightUrl: getRawGitHubUrl(org, name, alternLightPath),
-          darkUrl: getRawGitHubUrl(org, name, darkPath)
-        }
-      }
-
       return {
         type: 'light-dark',
-        lightUrl: getRawGitHubUrl(org, name, lightPath),
+        lightUrl: getRawGitHubUrl(org, name, hasLight ? lightPath : alternLightPath),
         darkUrl: getRawGitHubUrl(org, name, darkPath),
       };
     }
