@@ -47,11 +47,18 @@ code {
 	background-color: light-dark(var(--color-gray-200), var(--color-gray-800));
 }
 
+.inline-code code:not(:first-child):not(:last-child) {
+	padding-left: 0;
+	padding-right: 0;
+}
+
+.inline-code code:first-child,
 strong > code,
 code:has(+ strong > code) {
 	padding-right: 0;
 }
 
+.inline-code code:last-child,
 strong > code,
 strong:has(> code) + code {
 	padding-left: 0;
