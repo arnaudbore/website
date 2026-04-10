@@ -43,16 +43,17 @@ starlight-file-tree li {
 
 .expressive-code .copy .no-copy button  { display: none; }
 
-.inline-code code:not(:first-child):not(:last-child) {
-	padding-left: 0;
+code {
+	background-color: light-dark(var(--color-gray-200), var(--color-gray-800));
+}
+
+strong > code,
+code:has(+ strong > code) {
 	padding-right: 0;
 }
 
-.inline-code code:first-child {
-	padding-right: 0;
-}
-
-.inline-code code:last-child{
+strong > code,
+strong:has(> code) + code {
 	padding-left: 0;
 }
 
