@@ -95,9 +95,9 @@ The **bash script** contains the commands that will be run at execution of your 
 
 - All terminal commands, from the system (e.g. `cd`, `ls`, `find`) and those installed by dependencies (e.g. scilpy commands
 such as `scil_denoising_nlmeans.py`)
-- Environment variables available at runtime (`PATH` and others). **Use the prefix <code class="dark:text-blue-300 text-blue-500">\\$</code>** (e.g. `\$PATH`)
+- Environment variables available at runtime (`PATH` and others). **Use the prefix <code class="dark:text-blue-300 text-blue-500">\\&#36;</code>** (e.g. `\$PATH`)
 - Variables defined in the **groovy header**, in the `input` and `output` sections and through the `task` object. **Use
-the prefix <code class="dark:text-blue-300 text-blue-500">$</code>** (e.g. `$prefix` or `$task.cpus`)
+the prefix <code class="dark:text-blue-300 text-blue-500">&#36;</code>** (e.g. `$prefix` or `$task.cpus`)
 
 :::caution
 Variables defined in the `params` map of **_nextflow.config_** files are also available, but their usage is prohibited,
