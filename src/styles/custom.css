@@ -18,8 +18,8 @@
 }
 
 .sl-markdown-content > ol :where(ul) li,
-.starlight-aside__content ul li,
-.sl-markdown-content > ul li {
+.sl-markdown-content > ul li,
+.starlight-aside__content {
 	list-style-type: circle;
 	margin-left: 2rem;
 }
@@ -47,21 +47,26 @@ code {
 	background-color: light-dark(var(--color-gray-200), var(--color-gray-800));
 }
 
-.inline-code code:not(:first-child):not(:last-child) {
+.inline-code code:not(:first-child):not(:last-child),
+code:not(:first-child):not(:last-child) {
 	padding-left: 0;
 	padding-right: 0;
+	margin-left: 0;
+	margin-right: 0;
 }
 
 .inline-code code:first-child,
 strong > code,
 code:has(+ strong > code) {
 	padding-right: 0;
+	margin-right: 0;
 }
 
 .inline-code code:last-child,
 strong > code,
 strong:has(> code) + code {
 	padding-left: 0;
+	margin-left: 0;
 }
 
 starlight-tabs {

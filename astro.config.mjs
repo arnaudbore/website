@@ -191,6 +191,12 @@ export default defineConfig({
                         items: [
                             { label: 'Add your pipeline', slug: 'pipelines/submit' }
                         ]
+                    },
+                    {
+                        label: 'Statistics',
+                        link: 'statistics',
+                        icon: 'star',
+                        items: []
                     }
                 ])
             ]

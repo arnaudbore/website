@@ -18,4 +18,11 @@ export const collections = {
 			documentation: z.string().optional(),
 		}),
 	}),
+	repositories: defineCollection({
+		type: 'data',
+		schema: z.object({
+			org: z.string(),
+			repo: z.string(),
+		}),
+	}),
 };
