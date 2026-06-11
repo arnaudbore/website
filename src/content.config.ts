@@ -18,4 +18,14 @@ export const collections = {
 			documentation: z.string().optional(),
 		}),
 	}),
+	repositories: defineCollection({
+		loader: glob({
+			pattern: '*.yaml',
+			base: './src/content/repositories'
+		}),
+		schema: z.object({
+			org: z.string(),
+			repo: z.string(),
+		}),
+	}),
 };

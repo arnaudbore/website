@@ -1,0 +1,119 @@
+---
+// RepositoryStats.astro
+// Server-rendered skeleton; all data fetching and chart rendering is client-side.
+
+import { getCollection } from 'astro:content';
+const reposEntries = await getCollection('repositories');
+const REPOS = reposEntries.map((e) => e.data);
+---
+
+<script id="repos-data" type="application/json" set:html={JSON.stringify(REPOS)} />
+
+<div class="repository-stats-root not-content">
+    <!-- Controls bar: repo selector + date range, side-by-side on large screens -->
+    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center">
+        <!-- Repository selector -->
+        <div class="flex items-center gap-3">
+            <label for="repo-select" class="font-semibold text-sm whitespace-nowrap">Repository:</label>
+            <select
+                id="repo-select"
+                class="border border-[var(--sl-color-hairline)] rounded-md px-3 py-2 bg-[var(--sl-color-bg)] text-[var(--sl-color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--sl-color-accent)]"
+            >
+                {REPOS.map(({ org, repo }) => (
+                    <option value={`${org}/${repo}`}>{org}/{repo}</option>
+                ))}
+            </select>
+        </div>
+
+        <!-- Date range (shown only after data loads) -->
+        <div id="date-range-controls" class="hidden items-center gap-3 flex-wrap">
+            <label for="date-start" class="font-semibold text-sm whitespace-nowrap">From:</label>
+            <input
+                type="date"
+                id="date-start"
+                class="border border-[var(--sl-color-hairline)] rounded-md px-3 py-2 bg-[var(--sl-color-bg)] text-[var(--sl-color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--sl-color-accent)]"
+            />
+            <label for="date-end" class="font-semibold text-sm whitespace-nowrap">To:</label>
+            <input
+                type="date"
+                id="date-end"
+                class="border border-[var(--sl-color-hairline)] rounded-md px-3 py-2 bg-[var(--sl-color-bg)] text-[var(--sl-color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--sl-color-accent)]"
+            />
+        </div>
+    </div>
+
+    <!-- Loading / error overlay -->
+    <div
+        id="stats-overlay"
+        class="flex items-center justify-center py-16 text-[var(--sl-color-text-accent)]"
+    >
+        <span id="stats-overlay-message" class="text-sm animate-pulse">Loading statistics…</span>
+    </div>
+
+    <!-- Content (hidden until data ready) -->
+    <div id="stats-content" class="hidden">
+
+        <!-- Summary cards -->
+        <div class="grid grid-cols-2 gap-4 mb-8 sm:grid-cols-4">
+            <div class="rounded-xl border border-[var(--sl-color-hairline)] p-4 text-center bg-[var(--sl-color-bg-nav)]">
+                <p class="text-xs uppercase tracking-wide text-[var(--sl-color-text-accent)] mb-1">Stars</p>
+                <p id="card-stars" class="text-2xl font-bold text-[var(--sl-color-text)]">—</p>
+            </div>
+            <div class="rounded-xl border border-[var(--sl-color-hairline)] p-4 text-center bg-[var(--sl-color-bg-nav)]">
+                <p class="text-xs uppercase tracking-wide text-[var(--sl-color-text-accent)] mb-1">Forks</p>
+                <p id="card-forks" class="text-2xl font-bold text-[var(--sl-color-text)]">—</p>
+            </div>
+            <div class="rounded-xl border border-[var(--sl-color-hairline)] p-4 text-center bg-[var(--sl-color-bg-nav)]">
+                <p class="text-xs uppercase tracking-wide text-[var(--sl-color-text-accent)] mb-1">Total Views</p>
+                <p id="card-views" class="text-2xl font-bold text-[var(--sl-color-text)]">—</p>
+            </div>
+            <div class="rounded-xl border border-[var(--sl-color-hairline)] p-4 text-center bg-[var(--sl-color-bg-nav)]">
+                <p class="text-xs uppercase tracking-wide text-[var(--sl-color-text-accent)] mb-1">Total Clones</p>
+                <p id="card-clones" class="text-2xl font-bold text-[var(--sl-color-text)]">—</p>
+            </div>
+        </div>
+
+        <!-- Charts grid -->
+        <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+            <!-- Stars chart -->
+            <div class="rounded-xl border border-[var(--sl-color-hairline)] p-4 bg-[var(--sl-color-bg-nav)]">
+                <h3 class="text-sm font-semibold mb-3 text-[var(--sl-color-text)]">Stars over time</h3>
+                <div id="stars-chart-wrap" class="relative h-48">
+                    <canvas id="stars-chart" class="w-full h-full"></canvas>
+                    <p id="stars-no-data" class="hidden absolute inset-0 flex items-center justify-center text-sm text-[var(--sl-color-text-accent)]">No data available</p>
+                </div>
+            </div>
+
+            <!-- Forks chart -->
+            <div class="rounded-xl border border-[var(--sl-color-hairline)] p-4 bg-[var(--sl-color-bg-nav)]">
+                <h3 class="text-sm font-semibold mb-3 text-[var(--sl-color-text)]">Forks over time</h3>
+                <div id="forks-chart-wrap" class="relative h-48">
+                    <canvas id="forks-chart" class="w-full h-full"></canvas>
+                    <p id="forks-no-data" class="hidden absolute inset-0 flex items-center justify-center text-sm text-[var(--sl-color-text-accent)]">No data available</p>
+                </div>
+            </div>
+
+            <!-- Views chart -->
+            <div class="rounded-xl border border-[var(--sl-color-hairline)] p-4 bg-[var(--sl-color-bg-nav)]">
+                <h3 class="text-sm font-semibold mb-3 text-[var(--sl-color-text)]">Daily views</h3>
+                <div id="views-chart-wrap" class="relative h-48">
+                    <canvas id="views-chart" class="w-full h-full"></canvas>
+                    <p id="views-no-data" class="hidden absolute inset-0 flex items-center justify-center text-sm text-[var(--sl-color-text-accent)]">No data available</p>
+                </div>
+            </div>
+
+            <!-- Clones chart -->
+            <div class="rounded-xl border border-[var(--sl-color-hairline)] p-4 bg-[var(--sl-color-bg-nav)]">
+                <h3 class="text-sm font-semibold mb-3 text-[var(--sl-color-text)]">Daily clones</h3>
+                <div id="clones-chart-wrap" class="relative h-48">
+                    <canvas id="clones-chart" class="w-full h-full"></canvas>
+                    <p id="clones-no-data" class="hidden absolute inset-0 flex items-center justify-center text-sm text-[var(--sl-color-text-accent)]">No data available</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+import '../scripts/repository-stats';
+</script>
